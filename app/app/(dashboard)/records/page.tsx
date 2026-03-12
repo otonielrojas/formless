@@ -1,12 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { Badge } from "@/components/ui/badge";
+import { RecordStatus } from "@/components/record-status";
 import type { FormlessRecord } from "@/types/schema";
-
-const statusColors: Record<string, string> = {
-  open: "bg-blue-50 text-blue-700 border-blue-200",
-  in_progress: "bg-yellow-50 text-yellow-700 border-yellow-200",
-  resolved: "bg-green-50 text-green-700 border-green-200",
-};
 
 export default async function RecordsPage({
   searchParams,
@@ -61,9 +55,7 @@ export default async function RecordsPage({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-gray-700">{record.schemas?.name}</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${statusColors[record.status]}`}>
-                    {record.status.replace("_", " ")}
-                  </span>
+                  <RecordStatus recordId={record.id} status={record.status} />
                 </div>
                 <span className="text-xs text-gray-400">
                   {new Date(record.created_at).toLocaleString()}
