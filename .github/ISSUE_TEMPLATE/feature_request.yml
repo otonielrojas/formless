@@ -1,0 +1,47 @@
+name: Feature Request
+description: Suggest an idea or improvement
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea! Please describe what you'd like to see.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the situation where you feel something is missing or frustrating.
+      placeholder: When I try to capture requests for..., I have to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Describe the solution you'd like
+      description: What would the feature look like?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered
+      description: Any other approaches or workarounds you've tried?
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Which part of the app is this for?
+      options:
+        - Schema builder
+        - Intake surface
+        - Clarification loop
+        - Records & admin view
+        - Integrations (webhook, Slack, email)
+        - Auth & workspaces
+        - New section entirely
+        - Other
+    validations:
+      required: true
