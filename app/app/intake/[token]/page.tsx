@@ -57,14 +57,16 @@ export default function IntakePage({ params }: { params: { token: string } }) {
 
   function handleClarificationSubmit() {
     if (!input.trim()) return;
-    const userMessage: Message = { role: "user", content: input };
     const assistantMessage: Message = { role: "assistant", content: clarification };
-    const newHistory = [...messages, assistantMessage, userMessage];
-    setMessages(newHistory);
+    // historyForApi stops before the user's answer — extractFromInput appends input itself
+    const historyForApi = [...messages, assistantMessage];
+    // displayHistory includes the answer for the UI
+    const displayHistory = [...historyForApi, { role: "user" as const, content: input }];
+    setMessages(displayHistory);
     setInput("");
     setClarification("");
     setStep("input");
-    handleSubmit(input, newHistory);
+    handleSubmit(input, historyForApi);
   }
 
   return (
