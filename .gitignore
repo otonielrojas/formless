@@ -1,0 +1,16 @@
+# Dependencies
+app/node_modules/
+
+# Next.js
+app/.next/
+app/out/
+
+# Environment
+app/.env.local
+app/.env.*.local
+.env.local
+
+# Misc
+.DS_Store
+*.pem
+Thumbs.db
