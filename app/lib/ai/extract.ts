@@ -1,8 +1,11 @@
-import Anthropic from "@anthropic-ai/sdk";
+import Groq from "groq-sdk";
 import { z } from "zod";
 import type { SchemaDefinition, ExtractionResult } from "@/types/schema";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+// Best free Groq model for structured JSON tasks — swap to claude-sonnet-4-6 later
+const MODEL = "llama-3.3-70b-versatile";
 
 // ─── Schema builder ───────────────────────────────────────────────────────────
 
@@ -13,18 +16,23 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 export async function generateSchemaFromDescription(
   description: string
 ): Promise<SchemaDefinition> {
-  const message = await client.messages.create({
-    model: "claude-sonnet-4-6",
+  const response = await client.chat.completions.create({
+    model: MODEL,
     max_tokens: 1024,
+    response_format: { type: "json_object" },
     messages: [
       {
-        role: "user",
+        role: "system",
         content: `You are a schema designer for a form replacement system.
-An admin has described what data they need to capture. Generate a structured schema definition.
+Return ONLY valid JSON — no markdown, no explanation.`,
+      },
+      {
+        role: "user",
+        content: `An admin has described what data they need to capture. Generate a structured schema definition.
 
 Admin description: "${description}"
 
-Return ONLY a valid JSON object with this exact structure:
+Return a JSON object with this exact structure:
 {
   "name": "Human-readable name for this schema",
   "description": "One sentence describing what this schema captures",
@@ -33,8 +41,8 @@ Return ONLY a valid JSON object with this exact structure:
       "name": "snake_case_field_name",
       "label": "Human Readable Label",
       "type": "string|text|number|boolean|enum|date",
-      "required": true|false,
-      "description": "What this field captures (used in extraction prompt)",
+      "required": true,
+      "description": "What this field captures",
       "values": ["only", "for", "enum", "fields"]
     }
   ]
@@ -44,16 +52,15 @@ Rules:
 - Use "string" for short text (names, titles, systems)
 - Use "text" for long descriptions or body content
 - Use "enum" when values are constrained to a known list
-- Always include a clear "description" for each field — it guides the AI extraction
-- Return ONLY the JSON, no markdown, no explanation`,
+- Omit "values" for non-enum fields
+- Always include a clear "description" per field — it guides AI extraction`,
       },
     ],
   });
 
-  const raw = (message.content[0] as { type: string; text: string }).text.trim();
+  const raw = response.choices[0].message.content ?? "";
   const parsed = JSON.parse(raw);
 
-  // Validate the structure before returning
   const SchemaDefinitionSchema = z.object({
     name: z.string(),
     description: z.string(),
@@ -92,38 +99,35 @@ export async function extractFromInput(
     .join("\n");
 
   const systemPrompt = `You are an intelligent intake processor for a "${schema.name}" form.
-Your job is to extract structured data from natural language input.
+Extract structured data from natural language input. Return ONLY valid JSON — no markdown.
 
-Schema fields to extract:
+Fields to extract:
 ${fieldDescriptions}
 
 Rules:
-1. Extract values from the user's input as accurately as possible
-2. For missing REQUIRED fields, use the string "__MISSING__"
-3. For missing optional fields, use null
-4. For enum fields, map the user's words to the closest valid value
-5. Return ONLY valid JSON with the extracted field values
-6. Do not invent or assume values that aren't clearly stated
+- For missing REQUIRED fields use "__MISSING__"
+- For missing optional fields use null
+- For enum fields map the user's words to the closest valid value
+- Do not invent values not clearly stated
 
-Return this exact JSON structure:
+Return:
 {
-  "extracted": { "field_name": "value_or___MISSING___or_null" },
-  "confidence": { "field_name": 0.0-1.0 }
+  "extracted": { "field_name": "value or __MISSING__ or null" },
+  "confidence": { "field_name": 0.95 }
 }`;
 
-  const messages: Array<{ role: "user" | "assistant"; content: string }> = [
-    ...conversationHistory,
-    { role: "user", content: input },
-  ];
-
-  const response = await client.messages.create({
-    model: "claude-sonnet-4-6",
+  const response = await client.chat.completions.create({
+    model: MODEL,
     max_tokens: 1024,
-    system: systemPrompt,
-    messages,
+    response_format: { type: "json_object" },
+    messages: [
+      { role: "system", content: systemPrompt },
+      ...conversationHistory,
+      { role: "user", content: input },
+    ],
   });
 
-  const raw = (response.content[0] as { type: string; text: string }).text.trim();
+  const raw = response.choices[0].message.content ?? "";
   const parsed = JSON.parse(raw);
   const extracted: Record<string, unknown> = parsed.extracted;
 
@@ -133,7 +137,6 @@ Return this exact JSON structure:
     .map((f) => f.name);
 
   if (missingFields.length === 0) {
-    // Clean up __MISSING__ sentinels (shouldn't exist, but be safe)
     const cleanData: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(extracted)) {
       cleanData[k] = v === "__MISSING__" ? null : v;
@@ -141,32 +144,27 @@ Return this exact JSON structure:
     return { success: true, data: cleanData };
   }
 
-  // Generate a single natural follow-up question for the missing fields
+  // Generate one natural follow-up question for missing fields
   const missingLabels = missingFields.map(
     (name) => schema.fields.find((f) => f.name === name)?.label ?? name
   );
 
-  const clarifyResponse = await client.messages.create({
-    model: "claude-sonnet-4-6",
+  const clarifyResponse = await client.chat.completions.create({
+    model: MODEL,
     max_tokens: 256,
     messages: [
       {
         role: "user",
         content: `A user submitted a "${schema.name}" request but we're missing: ${missingLabels.join(", ")}.
-Their original message: "${input}"
-Generate ONE natural, friendly follow-up question to get this missing information.
-Be conversational. Return ONLY the question, no explanation.`,
+Their message: "${input}"
+Generate ONE natural, friendly follow-up question to get this information.
+Return ONLY the question — no explanation, no JSON.`,
       },
     ],
   });
 
-  const clarificationQuestion = (
-    clarifyResponse.content[0] as { type: string; text: string }
-  ).text.trim();
+  const clarificationQuestion =
+    clarifyResponse.choices[0].message.content?.trim() ?? "";
 
-  return {
-    success: false,
-    missingFields,
-    clarificationQuestion,
-  };
+  return { success: false, missingFields, clarificationQuestion };
 }

@@ -15,7 +15,9 @@ Origin prototype: `C:\Users\otoni\repos\nlp-cms`
 
 ## Tech Stack
 - Next.js 14 (App Router) + TypeScript + Tailwind + shadcn/ui
-- Claude API (`claude-sonnet-4-6`) for AI classification + extraction
+- Groq API (`llama-3.3-70b-versatile`) for AI classification + extraction — free tier for MVP
+  - Swap to `claude-sonnet-4-6` later by replacing client in `lib/ai/extract.ts`
+  - Env var: `GROQ_API_KEY` (get free key at console.groq.com)
 - Zod for schema validation (critical — all AI output must be validated)
 - Supabase (PostgreSQL + Auth)
 - Vercel deployment
