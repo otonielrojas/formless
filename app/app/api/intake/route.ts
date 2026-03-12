@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { extractFromInput } from "@/lib/ai/extract";
 
 export async function POST(request: NextRequest) {
@@ -9,8 +9,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Token and input are required" }, { status: 400 });
     }
 
-    // Use service role to allow unauthenticated intake submissions
-    const supabase = createClient();
+    // Service role: intake is unauthenticated, bypass RLS
+    const supabase = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
 
     const { data: schema, error: schemaError } = await supabase
       .from("schemas")

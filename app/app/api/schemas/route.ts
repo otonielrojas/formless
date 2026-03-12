@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,15 +11,38 @@ export async function POST(request: NextRequest) {
     const { schema } = await request.json();
     if (!schema) return NextResponse.json({ error: "Schema is required" }, { status: 400 });
 
-    const { data: membership } = await supabase
+    const admin = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    let { data: membership } = await admin
       .from("workspace_members")
       .select("workspace_id")
       .eq("user_id", user.id)
       .single();
 
-    if (!membership) return NextResponse.json({ error: "No workspace found" }, { status: 400 });
+    // Create workspace on the fly if none exists
+    if (!membership) {
+      const slug = (user.email ?? "user").split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "-");
+      const { data: workspace } = await admin
+        .from("workspaces")
+        .insert({ name: `${slug}'s Workspace`, slug: `${slug}-${Date.now()}` })
+        .select()
+        .single();
 
-    const { data, error } = await supabase
+      if (!workspace) return NextResponse.json({ error: "Could not create workspace" }, { status: 500 });
+
+      await admin.from("workspace_members").insert({
+        workspace_id: workspace.id,
+        user_id: user.id,
+        role: "admin",
+      });
+
+      membership = { workspace_id: workspace.id };
+    }
+
+    const { data, error } = await admin
       .from("schemas")
       .insert({
         workspace_id: membership.workspace_id,

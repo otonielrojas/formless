@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { DeleteSchemaButton } from "@/components/delete-schema-button";
 import Link from "next/link";
 import type { FormlessSchema } from "@/types/schema";
 
@@ -62,13 +63,14 @@ export default async function SchemasPage() {
                   Intake URL: /intake/{schema.intake_token}
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
                 <Link href={`/intake/${schema.intake_token}`} target="_blank">
                   <Button variant="outline" size="sm">Open Intake</Button>
                 </Link>
                 <Link href={`/records?schema=${schema.id}`}>
                   <Button variant="ghost" size="sm">Records</Button>
                 </Link>
+                <DeleteSchemaButton schemaId={schema.id} />
               </div>
             </div>
           ))}
