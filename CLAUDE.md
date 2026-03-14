@@ -38,8 +38,57 @@ Never skip Zod validation. Raw AI output never goes directly to the database.
 - Schema definitions stored as JSONB (`docs/ARCHITECTURE.md` has the format)
 - AI API key is server-side only — never expose to client
 
+## Git & Branching Policy
+
+**Never commit directly to `master`.** Master is production — it deploys to Netlify on push.
+
+### Branch naming
+| Type | Pattern | Example |
+|------|---------|---------|
+| Feature / roadmap item | `feature/<name>` | `feature/phase-2-webhooks` |
+| Security / hardening | `security/<name>` | `security/session-hardening` |
+| Bug fix | `fix/<name>` | `fix/intake-validation` |
+
+### Workflow for every task
+1. Start from an up-to-date `master`: `git checkout master && git pull`
+2. Create a branch: `git checkout -b feature/<name>`
+3. Implement, test, commit incrementally on the branch
+4. When done: `npm test` green + `npx tsc --noEmit` clean
+5. Merge to master: `git checkout master && git merge --no-ff feature/<name>`
+6. Push master: `git push origin master`
+7. Delete the branch: `git branch -d feature/<name>`
+
+### Commit messages
+- Use imperative present tense: "Add webhook dispatch" not "Added"
+- One logical change per commit — don't mix features
+- Reference roadmap section when relevant: "Add rate limiting (security item 3.1)"
+
+## Testing Workflow
+
+Every feature we ship must pass this checklist before moving to the next roadmap item.
+
+### 1. Unit tests (`npm test` in `app/`)
+- Write tests for any pure server-side logic (retry loops, data transforms, validation).
+- Colocate test files: `lib/foo/bar.test.ts` next to `lib/foo/bar.ts`.
+- Mock all external I/O (Supabase, fetch, Groq) — never hit real services in tests.
+- All tests must be green before proceeding.
+
+### 2. TypeScript check
+- Run `npx tsc --noEmit` in `app/` and fix any type errors.
+
+### 3. Manual smoke test
+After running the dev server (`npm run dev`), verify the feature end-to-end:
+- **Schema list**: copy URL button copies correct full URL; webhook URL saves and persists on refresh.
+- **Intake**: submit triggers webhook POST; delivery appears in `/webhooks` log with correct status.
+- **Webhook failure**: point webhook URL at a dead URL, verify retry attempts = 3 and status = failed in log.
+- **Auth boundary**: confirm unauthenticated users cannot reach dashboard pages.
+
+### 4. What NOT to test
+- Next.js routing, Supabase RLS policies, React rendering — these are framework guarantees.
+- One-liner UI components with no logic.
+
 ## Current Phase
-Phase 0 → Phase 1 (Core MVP). See `docs/ROADMAP.md` for checklist.
+Phase 2: Integrations & Channels. See `docs/ROADMAP.md` for checklist.
 
 ## Project Root
 `C:\Users\otoni\repos\formless\`

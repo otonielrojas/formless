@@ -44,6 +44,7 @@ export interface FormlessSchema {
   definition: SchemaDefinition;
   intake_token: string;
   version: number;
+  webhook_url: string | null;
   created_at: string;
   updated_at: string;
 }

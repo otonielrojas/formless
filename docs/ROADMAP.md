@@ -60,15 +60,15 @@
 ## Phase 2: Integrations & Channels
 **Goal:** Meet users where they already work.
 
-### 2.1 Copy Intake URL
-- [ ] One-click copy intake URL from schemas list
-- [ ] Full shareable URL (not just the token path)
+### 2.1 Copy Intake URL ✅
+- [x] One-click copy intake URL from schemas list
+- [x] Full shareable URL (not just the token path)
 
-### 2.2 Webhook Routing
-- [ ] Admin configures a webhook URL per schema
-- [ ] On successful intake, POST structured JSON to webhook
-- [ ] Retry logic on failure
-- [ ] Webhook delivery log in admin panel
+### 2.2 Webhook Routing ✅
+- [x] Admin configures a webhook URL per schema
+- [x] On successful intake, POST structured JSON to webhook
+- [x] Retry logic on failure (3 attempts, 0/1/2s backoff)
+- [x] Webhook delivery log in admin panel
 
 ### 2.3 Slack Integration
 - [ ] Connect a Slack workspace
