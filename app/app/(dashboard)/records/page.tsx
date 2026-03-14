@@ -63,7 +63,7 @@ export default async function RecordsPage({
               </div>
 
               <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 italic">
-                "{record.raw_input}"
+                &ldquo;{record.raw_input}&rdquo;
               </p>
 
               <div className="grid grid-cols-2 gap-2">
