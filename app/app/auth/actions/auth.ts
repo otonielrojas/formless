@@ -55,9 +55,19 @@ export async function login(formData: FormData) {
 export async function signup(formData: FormData) {
   const supabase = createClient();
 
-  const email = formData.get("email") as string;
+  const email = (formData.get("email") as string).toLowerCase().trim();
   const password = formData.get("password") as string;
   const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
+  // Invite-only: check against ALLOWED_SIGNUP_EMAILS env var (comma-separated)
+  const allowlist = (process.env.ALLOWED_SIGNUP_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (allowlist.length > 0 && !allowlist.includes(email)) {
+    redirect("/signup?error=This+email+is+not+on+the+invite+list");
+  }
 
   const { error } = await supabase.auth.signUp({
     email,
@@ -67,15 +77,14 @@ export async function signup(formData: FormData) {
     },
   });
 
-  if (error) redirect("/login?error=Sign+up+failed");
+  if (error) redirect("/signup?error=Sign+up+failed.+Password+must+be+at+least+6+characters");
 
-  // If email confirmation is disabled, the user has a session — handle via callback anyway
   revalidatePath("/", "layout");
   redirect("/login?message=Check+your+email+to+confirm+your+account");
 }
 
 export async function logout() {
   const supabase = createClient();
-  await supabase.auth.signOut();
+  await supabase.auth.signOut({ scope: "global" }); // invalidate all devices
   redirect("/login");
 }

@@ -1,14 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { z } from "zod";
 import { extractFromInput } from "@/lib/ai/extract";
 import { dispatchWebhook } from "@/lib/webhooks/dispatch";
 
+// ─── Validation schemas ────────────────────────────────────────────────────────
+
+const MessageSchema = z.object({
+  role: z.enum(["user", "assistant"]),
+  content: z.string().max(2000),
+});
+
+const IntakeBodySchema = z.object({
+  token: z.string().min(1),
+  input: z.string().min(1).max(5000),
+  conversationHistory: z.array(MessageSchema).max(20).default([]),
+});
+
+const RATE_LIMIT = 50;
+const RATE_WINDOW_MS = 60 * 60 * 1000;
+
 export async function POST(request: NextRequest) {
   try {
-    const { token, input, conversationHistory } = await request.json();
-    if (!token || !input?.trim()) {
-      return NextResponse.json({ error: "Token and input are required" }, { status: 400 });
+    const body = await request.json();
+    const parsed = IntakeBodySchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
     }
+
+    const { token, input, conversationHistory } = parsed.data;
 
     // Service role: intake is unauthenticated, bypass RLS
     const supabase = createServiceClient(
@@ -26,7 +47,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid intake link" }, { status: 404 });
     }
 
-    const result = await extractFromInput(input, schema.definition, conversationHistory ?? []);
+    // Rate limit: max 50 submissions per schema per hour
+    const since = new Date(Date.now() - RATE_WINDOW_MS).toISOString();
+    const { count: recentCount } = await supabase
+      .from("records")
+      .select("*", { count: "exact", head: true })
+      .eq("schema_id", schema.id)
+      .gte("created_at", since);
+
+    if ((recentCount ?? 0) >= RATE_LIMIT) {
+      return NextResponse.json(
+        { error: "Too many submissions. Please try again later." },
+        { status: 429 }
+      );
+    }
+
+    const result = await extractFromInput(input, schema.definition, conversationHistory);
 
     if (!result.success) {
       return NextResponse.json({
