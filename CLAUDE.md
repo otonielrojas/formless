@@ -73,8 +73,9 @@ Every feature we ship must pass this checklist before moving to the next roadmap
 - Mock all external I/O (Supabase, fetch, Groq) — never hit real services in tests.
 - All tests must be green before proceeding.
 
-### 2. TypeScript check
-- Run `npx tsc --noEmit` in `app/` and fix any type errors.
+### 2. Build check
+- Run `npm run build` in `app/` — this catches both TypeScript errors and ESLint errors that Next.js enforces at build time.
+- `npx tsc --noEmit` alone is not sufficient; the build must pass cleanly.
 
 ### 3. Manual smoke test
 After running the dev server (`npm run dev`), verify the feature end-to-end:
