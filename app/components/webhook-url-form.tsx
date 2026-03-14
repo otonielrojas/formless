@@ -25,11 +25,14 @@ export function WebhookUrlForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ webhook_url: url }),
       });
-      if (!res.ok) throw new Error("Save failed");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "Save failed");
+      }
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
-    } catch {
-      setError("Failed to save webhook URL");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save webhook URL");
     } finally {
       setSaving(false);
     }

@@ -65,7 +65,7 @@ export interface FormlessRecord {
 
 export const ExtractionResultSchema = z.object({
   success: z.boolean(),
-  data: z.record(z.unknown()).optional(),
+  data: z.record(z.string(), z.unknown()).optional(),
   missingFields: z.array(z.string()).optional(),
   clarificationQuestion: z.string().optional(),
 });

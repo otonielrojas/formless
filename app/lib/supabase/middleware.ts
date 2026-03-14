@@ -28,13 +28,27 @@ export async function updateSession(request: NextRequest) {
   // Refresh session — do not remove this call
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Protect dashboard routes
-  const isDashboard = request.nextUrl.pathname.startsWith("/schemas") ||
-    request.nextUrl.pathname.startsWith("/records");
+  const path = request.nextUrl.pathname;
+
+  // Protect dashboard routes (add new top-level routes here)
+  const isDashboard =
+    path.startsWith("/schemas") ||
+    path.startsWith("/records") ||
+    path.startsWith("/webhooks");
 
   if (!user && isDashboard) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
+  // Gate unconfirmed users — redirect to holding page until email is confirmed
+  const authPaths = ["/login", "/signup", "/verify-email", "/auth"];
+  const isAuthPath = authPaths.some((p) => path.startsWith(p));
+
+  if (user && !user.email_confirmed_at && !isAuthPath) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/verify-email";
     return NextResponse.redirect(url);
   }
 

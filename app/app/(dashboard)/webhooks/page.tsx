@@ -27,20 +27,23 @@ export default async function WebhooksPage() {
   let deliveries: WebhookDelivery[] = [];
 
   if (membership) {
-    const { data } = await supabase
-      .from("webhook_deliveries")
-      .select("*, schemas(name)")
-      .in(
-        "schema_id",
-        supabase
-          .from("schemas")
-          .select("id")
-          .eq("workspace_id", membership.workspace_id)
-      )
-      .order("created_at", { ascending: false })
-      .limit(100);
+    const { data: schemas } = await supabase
+      .from("schemas")
+      .select("id")
+      .eq("workspace_id", membership.workspace_id);
 
-    deliveries = (data ?? []) as WebhookDelivery[];
+    const schemaIds = (schemas ?? []).map((s: { id: string }) => s.id);
+
+    if (schemaIds.length > 0) {
+      const { data } = await supabase
+        .from("webhook_deliveries")
+        .select("*, schemas(name)")
+        .in("schema_id", schemaIds)
+        .order("created_at", { ascending: false })
+        .limit(100);
+
+      deliveries = (data ?? []) as WebhookDelivery[];
+    }
   }
 
   return (

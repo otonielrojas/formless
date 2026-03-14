@@ -2,6 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 
+// Block private/loopback ranges to prevent SSRF
+const PRIVATE_IP_PATTERN =
+  /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i;
+
+function validateWebhookUrl(raw: string): string | null {
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== "https:") return "Webhook URL must use HTTPS";
+    if (PRIVATE_IP_PATTERN.test(url.hostname)) return "Webhook URL must be a public host";
+    return null;
+  } catch {
+    return "Webhook URL is not a valid URL";
+  }
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -12,6 +27,11 @@ export async function PATCH(
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { webhook_url } = await request.json();
+
+    if (webhook_url) {
+      const urlError = validateWebhookUrl(webhook_url);
+      if (urlError) return NextResponse.json({ error: urlError }, { status: 400 });
+    }
 
     const admin = createServiceClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
