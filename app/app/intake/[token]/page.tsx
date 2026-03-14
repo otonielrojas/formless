@@ -142,7 +142,7 @@ export default function IntakePage({ params }: { params: { token: string } }) {
               className="min-h-[100px] resize-none border-0 p-0 focus-visible:ring-0 text-sm"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                  step === "input" ? handleFirstSubmit() : handleClarificationSubmit();
+                  if (step === "input") { handleFirstSubmit(); } else { handleClarificationSubmit(); }
                 }
               }}
             />

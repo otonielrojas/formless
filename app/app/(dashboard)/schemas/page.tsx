@@ -33,7 +33,7 @@ export default async function SchemasPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Schemas</h1>
-          <p className="text-sm text-gray-500 mt-1">Each schema is a form you've replaced with natural language.</p>
+          <p className="text-sm text-gray-500 mt-1">Each schema is a form you&apos;ve replaced with natural language.</p>
         </div>
         <Link href="/schemas/new">
           <Button>New Schema</Button>
