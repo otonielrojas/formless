@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DeleteSchemaButton } from "@/components/delete-schema-button";
+import { CopyIntakeUrlButton } from "@/components/copy-intake-url-button";
+import { WebhookUrlForm } from "@/components/webhook-url-form";
 import Link from "next/link";
 import type { FormlessSchema } from "@/types/schema";
 
@@ -62,8 +64,13 @@ export default async function SchemasPage() {
                 <p className="text-xs text-gray-400 font-mono">
                   Intake URL: /intake/{schema.intake_token}
                 </p>
+                <div className="pt-1">
+                  <p className="text-xs text-gray-400 mb-1">Webhook URL</p>
+                  <WebhookUrlForm schemaId={schema.id} initialUrl={schema.webhook_url} />
+                </div>
               </div>
               <div className="flex gap-2 items-center">
+                <CopyIntakeUrlButton token={schema.intake_token} />
                 <Link href={`/intake/${schema.intake_token}`} target="_blank">
                   <Button variant="outline" size="sm">Open Intake</Button>
                 </Link>

@@ -17,6 +17,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <nav className="flex gap-4 text-sm text-gray-600">
               <a href="/schemas" className="hover:text-gray-900">Schemas</a>
               <a href="/records" className="hover:text-gray-900">Records</a>
+              <a href="/webhooks" className="hover:text-gray-900">Webhooks</a>
             </nav>
           </div>
           <form action={logout}>

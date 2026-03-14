@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { extractFromInput } from "@/lib/ai/extract";
+import { dispatchWebhook } from "@/lib/webhooks/dispatch";
 
 export async function POST(request: NextRequest) {
   try {
@@ -49,6 +50,21 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (recordError) throw recordError;
+
+    // Fire webhook if configured (non-blocking on failure)
+    if (schema.webhook_url) {
+      dispatchWebhook(schema.webhook_url, schema.id, {
+        event: "record.created",
+        schema: { id: schema.id, name: schema.name, version: schema.version },
+        record: {
+          id: record.id,
+          raw_input: record.raw_input,
+          extracted_data: record.extracted_data,
+          status: record.status,
+          created_at: record.created_at,
+        },
+      }).catch(() => {/* logged inside dispatchWebhook */});
+    }
 
     return NextResponse.json({ success: true, record });
   } catch (e) {
