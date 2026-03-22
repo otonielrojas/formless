@@ -26,7 +26,8 @@ export async function PATCH(
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { webhook_url } = await request.json();
+    const body = await request.json();
+    const { webhook_url, slack_channel_id } = body;
 
     if (webhook_url) {
       const urlError = validateWebhookUrl(webhook_url);
@@ -46,9 +47,13 @@ export async function PATCH(
 
     if (!membership) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    const updates: Record<string, string | null> = {};
+    if ("webhook_url" in body) updates.webhook_url = webhook_url || null;
+    if ("slack_channel_id" in body) updates.slack_channel_id = slack_channel_id || null;
+
     const { error } = await admin
       .from("schemas")
-      .update({ webhook_url: webhook_url || null })
+      .update(updates)
       .eq("id", params.id)
       .eq("workspace_id", membership.workspace_id);
 

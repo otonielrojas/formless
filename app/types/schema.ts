@@ -45,6 +45,7 @@ export interface FormlessSchema {
   intake_token: string;
   version: number;
   webhook_url: string | null;
+  slack_channel_id: string | null;
   created_at: string;
   updated_at: string;
 }
