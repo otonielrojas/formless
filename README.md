@@ -7,7 +7,7 @@
 ![Next.js](https://img.shields.io/badge/Next.js-000000?logo=next.js&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-06B6D4?logo=tailwindcss&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?logo=supabase&logoColor=white)
-![Claude AI](https://img.shields.io/badge/Claude_API-D97706?logo=anthropic&logoColor=white)
+![Groq](https://img.shields.io/badge/Groq_API-F55036?logo=groq&logoColor=white)
 
 Formless is an AI-powered intake platform for operations teams that lets employees submit requests, tickets, and reports in **plain English** — no forms, no fields, no training required.
 
@@ -51,14 +51,14 @@ flowchart TD
     B -->|Yes| C
     B -->|No / wrong channel| Z["❌ Reject or re-route"]
 
-    C["Pass 2 — Extraction\nClaude extracts structured fields\nfrom free-form text"]
+    C["Pass 2 — Extraction\nAI extracts structured fields\nfrom free-form text"]
     C --> D
 
     D["Pass 3 — Validation\nZod parses extracted JSON\nagainst the schema definition"]
     D -->|All required fields present| E
     D -->|Missing required fields| F
 
-    F["Pass 4 — Clarification\nClaude generates ONE natural\nfollow-up question"]
+    F["Pass 4 — Clarification\nAI generates ONE natural\nfollow-up question"]
     F --> A
 
     E["✅ Validated Record\nstored in database"]
@@ -85,11 +85,11 @@ Anywhere humans currently fill out structured forms:
 | Layer | Technology |
 |-------|-----------|
 | Frontend + API | [Next.js 14](https://nextjs.org) (App Router, monolith-first) |
-| AI Model | [Claude claude-sonnet-4-6](https://anthropic.com) — two-pass classify + extract |
+| AI Model | [Groq API](https://groq.com) (`llama-3.3-70b-versatile`) — two-pass classify + extract |
 | Structured Output | JSON mode + [Zod](https://zod.dev) runtime validation |
 | Database | [Supabase](https://supabase.com) — PostgreSQL + Auth + real-time |
 | UI | [Tailwind CSS](https://tailwindcss.com) + [shadcn/ui](https://ui.shadcn.com) |
-| Hosting | [Vercel](https://vercel.com) |
+| Hosting | [Netlify](https://netlify.com) |
 
 ---
 
@@ -118,7 +118,7 @@ Formless schemas are defined in plain English by admins, then structured by AI. 
 | Phase | Status | Focus |
 |-------|--------|-------|
 | Phase 0–1 | ✅ Complete | Foundation, schema builder, intake engine, clarification loop, auth |
-| Phase 2 | 🔄 In progress | Channel integrations — Slack · Email · Jira |
+| Phase 2 (partial) | 🔄 In progress | Slack ✅ · Webhook ✅ · Email (next) · Jira (planned) |
 | Phase 3 | Planned | Multi-workspace support, analytics, usage billing |
 
 See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the full breakdown.
